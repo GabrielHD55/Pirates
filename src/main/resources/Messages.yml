@@ -1,0 +1,41 @@
+# Messages
+NoPermissions: "&cYou have not permissions"
+PlayerIsNotOnline: "&cThis player is not online!"
+JoinArena: "&7[&a+&7] &e%player% &7joined the game [&6%players%&7/&6%max-players%&7]"
+QuitArena: "&7[&c-&7] &e%player% &7left the game [&6%players%&7/&6%max-players%&7]"
+ForceStart: "&a&lThe game was forced to start!"
+FullArena: "&cThis game is full!"
+PlayerDeath: "&c%player% died"
+Eliminated: "&c%player% Was eliminated"
+StartTime: "&aThe game will start in %time% second(s)"
+GameStarted: "&a&lThe game started, good luck!"
+NoInGame: "&cYou are not in a game!"
+AlreadyInGame: "&cYou are already in a game"
+TeamWinning:
+  - "&6%team% won the game!"
+  - "&eMembers: &f%members%"
+
+ArenaCreate: "arena creada"
+ArenaDelete: "arena eliminada"
+ArenaExists: "esta arena existe"
+ArenaNoExists: "esta arena no existe"
+ArenaFull: "arena llena"
+ArenaFinish: "arena finalizada"
+ArenaEnable: "arena habilitada"
+ArenaDisable: "arena deshabilitada"
+ArenaInGame: "arena en juego"
+ArenaNoAvailable: "&cArena not available"
+NoArenasAvailable: "&cThere are no arenas available"
+
+YourStats:
+  - "&aYour Stats"
+OthersStats:
+  - "&a%player%'s Stats"
+
+# Titles
+Winning:
+  Title: "&6&lYOU WIN!"
+  Sub: "&e&lCongratulations"
+Losses:
+  Title: "&c&lGAME OVER"
+  Sub: "&7Better luck next time"

@@ -1,0 +1,58 @@
+#Types: MySQL, SQLite
+StorageType: SQLite
+MySQL:
+  Host: 127.0.0.1
+  Port: 3306
+  TableName: "Data_"
+  Database: "Minigame"
+  Username: "Minigame"
+  Password: "Minigame123"
+
+Settings:
+  ExpPerKill:
+    Min: 10
+    Max: 15
+  ExpPerWin:
+    Min: 20
+    Max: 25
+  LevelExpMultiplier: 500
+  # In Seconds
+  RespawnTime: 10
+  Lives: 1
+  WaterDamage: 2.0
+
+Scoreboard:
+  Title: "&ePirates"
+  Game:
+    - "game line"
+  PreGame:
+    - "pregame line"
+  Lobby:
+    - "lobby line"
+
+Menu:
+  Games:
+    Title: "&cGames"
+    Looking: "&f&lLooking for game"
+    Random: "&aRandom game"
+    GameState:
+      - "&7&m------------------------"
+      - "&7● &fPlayers&7: &e%players%&7/&e%max%"
+      - "&7● &fState&7: &e%state%"
+      - "&7&m------------------------"
+
+Items:
+  Lobby:
+    Games:
+      ID: COMPASS
+      Name: "&cGames"
+      Lore:
+        - "&7Right click to open"
+      Slot: 4
+  PreGame:
+    Leave:
+      ID: RED_BED
+      Name: "&c&lLeave"
+      Lore:
+        - "&7Right click to leave"
+      Slot: 8
