@@ -15,6 +15,8 @@ import org.bukkit.entity.*;
 import org.bukkit.potion.*;
 import com.gabrielhd.pirates.Tasks.*;
 import java.util.*;
+import java.util.logging.Level;
+
 import org.bukkit.*;
 import org.bukkit.enchantments.*;
 
@@ -59,19 +61,24 @@ public class Arena {
         this.alivePlayers = Lists.newArrayList();
         this.broadcast = Lists.newArrayList(60, 30, 20, 15, 10, 5, 4, 3, 2, 1 );
         this.blockTracker = new BlockTracker();
-        this.teams = Lists.newArrayList(new Team(TeamColor.RED), new Team(TeamColor.BLUE));
+
         this.state = ArenaState.WAITING;
+        this.teams = Lists.newArrayList(new Team(TeamColor.RED), new Team(TeamColor.BLUE));
 
         this.plugin = plugin;
     }
 
     public boolean isFull() {
+        return this.players.size() >= this.maxPlayers;
+    }
+
+    public boolean canStart() {
         return this.players.size() >= this.minPlayers;
     }
 
     public void addPlayer(Player player) {
-        YamlConfig settings = new YamlConfig(this.plugin, "Settings");
-        YamlConfig messages = new YamlConfig(this.plugin, "Messages");
+        YamlConfig settings = this.plugin.getConfigManager().getSettings();
+        YamlConfig messages = this.plugin.getConfigManager().getMessages();
 
         if (!this.enable) {
             player.sendMessage(Utils.Color(messages.getString("ArenaIsDisable").replace("%arena%", this.name)));
@@ -96,17 +103,30 @@ public class Arena {
         player.setHealth(player.getMaxHealth());
         player.setAllowFlight(false);
         player.setFlying(false);
+        player.setGameMode(GameMode.SURVIVAL);
+
+        for(Player ingame : this.players) {
+            ingame.showPlayer(player);
+            player.showPlayer(ingame);
+        }
 
         for (PotionEffect potionEffect : player.getActivePotionEffects()) {
             player.removePotionEffect(potionEffect.getType());
         }
 
-        player.getInventory().setItem(settings.getInt("Items.PreGame.Leave.Slot", 8), ItemUtils.createItem(settings.getString("Items.PreGame.Leave.ID", "RED_BED"), settings.getString("Items.PreGame.Leave.Name", "&c&lLeave"), 1, settings.getStringList("Items.PreGame.Leave.Lore")));
+        try {
+            player.getInventory().setItem(settings.getInt("Items.PreGame.Leave.Slot", 8), ItemUtils.createItem(settings.getString("Items.PreGame.Leave.ID", "RED_BED"), settings.getString("Items.PreGame.Leave.Name", "&c&lLeave"), 1, settings.getStringList("Items.PreGame.Leave.Lore")));
+        } catch (NullPointerException ex) {
+            ex.printStackTrace();
+
+            this.plugin.getLogger().log(Level.SEVERE, "The configuration for the Leave item is wrong, please check your configuration or contact the developer!");
+        }
 
         this.players.add(player);
+        this.alivePlayers.add(player);
         this.sendMessage(messages.getString("JoinArena").replace("%player%", player.getName()).replace("%players%", String.valueOf(this.players.size())).replace("%max-players%", String.valueOf(this.maxPlayers)));
 
-        if (isFull() && this.state == ArenaState.WAITING && !this.starting && !this.started) {
+        if (canStart() && this.state == ArenaState.WAITING && !this.starting && !this.started) {
             this.starting = true;
 
             this.state = ArenaState.STARTING;
@@ -115,8 +135,9 @@ public class Arena {
     }
     
     public void removePlayer(Player player, boolean disconnect) {
-        YamlConfig settings = new YamlConfig(this.plugin, "Settings");
-        YamlConfig messages = new YamlConfig(this.plugin, "Messages");
+        YamlConfig settings = this.plugin.getConfigManager().getSettings();
+        YamlConfig messages = this.plugin.getConfigManager().getMessages();
+
         if (this.players.contains(player)) {
             if (!disconnect && player.isOnline()) {
                 PlayerData playerData = this.plugin.getPlayerManager().getPlayerData(player);
@@ -127,13 +148,36 @@ public class Arena {
 
                 player.getInventory().clear();
                 player.getInventory().setArmorContents(null);
+                player.setAllowFlight(false);
+                player.setFlying(false);
+                player.setHealth(player.getMaxHealth());
+                player.setFoodLevel(20);
+                player.setGameMode(GameMode.ADVENTURE);
+
+                for(Player online : Bukkit.getOnlinePlayers()) {
+                    online.showPlayer(player);
+                    player.showPlayer(player);
+                }
             }
+
             if (this.state != ArenaState.ENDING && this.state != ArenaState.PLAYING) {
                 this.sendMessage(messages.getString("QuitArena").replace("%player%", player.getName()).replace("%players%", String.valueOf(this.players.size() - 1)).replace("%max-players%", String.valueOf(this.maxPlayers)));
             }
 
             this.alivePlayers.remove(player);
             this.players.remove(player);
+
+            if(this.plugin.getSpawnLocation() != null) {
+                player.teleport(this.plugin.getSpawnLocation());
+            }
+
+            try {
+                player.getInventory().setItem(settings.getInt("Items.Lobby.Games.Slot", 0), ItemUtils.createItem(settings.getString("Items.Lobby.Games.ID", "COMPASS"), settings.getString("Items.Lobby.Games.Name", "&7Right click to open"), 1, settings.getStringList("Items.Lobby.Games.Lore")));
+            } catch (NullPointerException ex) {
+                ex.printStackTrace();
+
+                this.plugin.getLogger().log(Level.SEVERE, "The configuration for the Games item is wrong, please check your configuration or contact the developer!");
+            }
 
             Team team = this.getPlayerTeam(player);
             if (team != null) {
@@ -146,8 +190,9 @@ public class Arena {
     }
     
     public void deathPlayer(Player player) {
-        YamlConfig settings = new YamlConfig(this.plugin, "Settings");
-        YamlConfig messages = new YamlConfig(this.plugin, "Messages");
+        YamlConfig settings = this.plugin.getConfigManager().getSettings();
+        YamlConfig messages = this.plugin.getConfigManager().getMessages();
+
         if (this.players.contains(player)) {
             this.alivePlayers.remove(player);
 
@@ -176,8 +221,9 @@ public class Arena {
     }
     
     public void addSpectator(Player player) {
-        YamlConfig settings = new YamlConfig(this.plugin, "Settings");
-        YamlConfig messages = new YamlConfig(this.plugin, "Messages");
+        YamlConfig settings = this.plugin.getConfigManager().getSettings();
+        YamlConfig messages = this.plugin.getConfigManager().getMessages();
+
         if (this.players.contains(player)) {
             player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 100000, 10000, true), true);
             player.setAllowFlight(true);
@@ -211,7 +257,7 @@ public class Arena {
         if(this.state != ArenaState.ENDING) {
             this.state = ArenaState.ENDING;
 
-            YamlConfig messages = new YamlConfig(this.plugin, "Messages");
+            YamlConfig messages = this.plugin.getConfigManager().getMessages();
 
             this.clearMobs();
 
@@ -229,7 +275,7 @@ public class Arena {
 
                 if (messageWin.contains("%members%")) {
                     StringBuilder stringBuilder = new StringBuilder();
-                    for (Player player : winner.getMembersList()) {
+                    for (Player player : winner.getMembers()) {
                         stringBuilder.append(player.getName()).append(" ");
                     }
 
@@ -240,7 +286,7 @@ public class Arena {
             }
 
             for (Team team : this.teams) {
-                for (Player player2 : team.getMembersList()) {
+                for (Player player2 : team.getMembers()) {
                     if (!team.isAlive(this)) {
                         player2.sendTitle(Utils.Color(messages.getString("Losses.Title")), Utils.Color(messages.getString("Losses.Sub")));
                     } else {
@@ -275,7 +321,8 @@ public class Arena {
     }
     
     public void start() {
-        YamlConfig messages = new YamlConfig(this.plugin, "Messages");
+        YamlConfig messages = this.plugin.getConfigManager().getMessages();
+
         this.sendMessage(messages.getString("GameStarted"));
 
         clearMobs();
@@ -285,7 +332,6 @@ public class Arena {
         this.state = ArenaState.PLAYING;
         this.startTask.cancel();
         this.startTask = null;
-        this.alivePlayers.addAll(this.players);
 
         Random rand = new Random();
         Team blue = this.getTeam(TeamColor.BLUE);
@@ -355,13 +401,20 @@ public class Arena {
         ItemStack arrow = new ItemStack(Material.ARROW);
         ItemStack bow = new ItemStack(Material.BOW);
         bow.addUnsafeEnchantment(Enchantment.ARROW_INFINITE, 1);
-        ItemStack chestplate = new ItemStack(Material.IRON_CHESTPLATE);
-        chestplate.addUnsafeEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 4);
+
+        ItemStack chestplate = new ItemStack(Material.LEATHER_CHESTPLATE);
+        chestplate.addUnsafeEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 1);
+
+        player.setFoodLevel(20);
+        player.setHealth(player.getMaxHealth());
+        player.setAllowFlight(false);
+        player.setFlying(false);
+
         player.getInventory().clear();
         player.getInventory().addItem(bow, arrow);
         player.getInventory().setChestplate(chestplate);
-        player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 99999, 0, false, false));
-        player.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 1200, 5, false, false));
+
+        player.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 100, 0, true, true));
         if (this.getPlayerTeam(player) != null) {
             player.teleport(this.getPlayerTeam(player).getLoc());
         }

@@ -43,7 +43,7 @@ public class EndTask extends BukkitRunnable
         }
 
         for (Team team : this.arena.getTeams()) {
-            for (Player member : team.getMembersList()) {
+            for (Player member : team.getMembers()) {
                 if (team.isAlive(this.arena)) {
                     spawnRandomFirework(member.getEyeLocation());
                 }

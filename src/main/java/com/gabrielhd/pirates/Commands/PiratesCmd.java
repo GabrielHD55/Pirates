@@ -15,13 +15,18 @@ import com.gabrielhd.pirates.Player.PlayerState;
 import com.gabrielhd.pirates.Teams.Team;
 import com.gabrielhd.pirates.Teams.TeamColor;
 import com.gabrielhd.pirates.Utils.Utils;
-
-import net.jitse.npclib.api.NPC;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.event.player.PlayerTeleportEvent;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 
 public class PiratesCmd implements CommandExecutor {
 
@@ -38,8 +43,8 @@ public class PiratesCmd implements CommandExecutor {
     }
     
     public void command(CommandSender sender, Command cmd, String label, String[] args) {
-        YamlConfig settings = new YamlConfig(this.plugin, "Settings");
-        YamlConfig messages = new YamlConfig(this.plugin, "Messages");
+        YamlConfig settings = this.plugin.getConfigManager().getSettings();
+        YamlConfig messages = this.plugin.getConfigManager().getMessages();
 
         ArenaManager arenaManager = this.plugin.getArenaManager();
 
@@ -57,22 +62,13 @@ public class PiratesCmd implements CommandExecutor {
                     if(playerData != null) {
                         if(playerData.getState() == PlayerState.LOBBY) {
                             if(args.length == 1) {
-                                Arena game = this.plugin.getArenaManager().getArena(args[0]);
-
-                                if(game == null) {
-                                    player.sendMessage(Utils.Color(messages.getString("ArenaNoExists").replace("%arena%", args[0])));
+                                List<Arena> arenas = Arrays.stream(this.plugin.getArenaManager().getAllGames()).filter(game -> (game.getState() == ArenaState.WAITING || game.getState() == ArenaState.STARTING) && !game.isFull()).collect(Collectors.toList());
+                                if (arenas.isEmpty()) {
+                                    player.sendMessage(Utils.Color(messages.getString("NoArenasAvailable")));
                                     return;
                                 }
-
-                                if(game.getState() == ArenaState.PLAYING || game.getState() == ArenaState.ENDING) {
-                                    player.sendMessage(Utils.Color(messages.getString("ArenaInGame").replace("%arena%", game.getName())));
-                                    return;
-                                }
-
-                                if(game.isFull()) {
-                                    player.sendMessage(Utils.Color(messages.getString("ArenaFull")));
-                                    return;
-                                }
+                                Collections.shuffle(arenas);
+                                Arena game = (arenas.size() == 1) ? arenas.get(0) : arenas.get(ThreadLocalRandom.current().nextInt(0, arenas.size()-1));
 
                                 game.addPlayer(player);
                                 return;
@@ -129,13 +125,24 @@ public class PiratesCmd implements CommandExecutor {
 
                     CustomNPC customNPC = this.plugin.getNpcManager().getNPC(NPCType.ARENAS);
                     if(customNPC == null) {
-                        NPC npc = npcManager.addNPC("arenas", npcManager.getConfig().getStringList("NPCs.Arenas.Name"), player.getLocation(), NPCType.ARENAS).getNPC();
-
-                        Bukkit.getOnlinePlayers().forEach(npc::show);
+                        npcManager.addNPC("arenas", npcManager.getConfig().getString("NPCs.Arenas.Name"), player.getLocation(), NPCType.ARENAS, npcManager.getConfig().getString("NPCs.Arenas.Skin"));
                     } else {
-                        customNPC.getNPC().setLocation(player.getLocation());
+                        customNPC.getNPC().teleport(player.getLocation(), PlayerTeleportEvent.TeleportCause.COMMAND);
                     }
+
+                    npcManager.saveNPCs();
                     player.sendMessage(Utils.Color("&aNPC Games updated correctly!"));
+                    return;
+                }
+
+                if(args[0].equalsIgnoreCase("reload")) {
+                    if (!player.hasPermission("pirates.admin")) {
+                        player.sendMessage(Utils.Color(messages.getString("NoPermissions")));
+                        return;
+                    }
+
+                    this.plugin.reload();
+                    player.sendMessage(Utils.Color(messages.getString("&aPlugin reloaded correctly!")));
                     return;
                 }
 
@@ -145,10 +152,8 @@ public class PiratesCmd implements CommandExecutor {
                         return;
                     }
 
-                    NPC npc = npcManager.addNPC("shop-"+npcManager.getNpcs().size(), npcManager.getConfig().getStringList("NPCs.Shop.Name"), player.getLocation(), NPCType.SHOP).getNPC();
-
-                    Bukkit.getOnlinePlayers().forEach(npc::show);
-
+                    npcManager.addNPC("shop-"+npcManager.getNpcs().size(), npcManager.getConfig().getString("NPCs.Shop.Name"), player.getLocation(), NPCType.SHOP, npcManager.getConfig().getString("NPCs.Shop.Skin"));
+                    npcManager.saveNPCs();
                     player.sendMessage(Utils.Color("&aShop NPC added correctly!"));
                     return;
                 }
@@ -164,6 +169,7 @@ public class PiratesCmd implements CommandExecutor {
 
                         if(customNPC != null) {
                             npcManager.removeNPC(customNPC);
+                            npcManager.saveNPCs();
 
                             player.sendMessage(Utils.Color("&cShop NPC removed correctly!"));
                         }
@@ -171,6 +177,17 @@ public class PiratesCmd implements CommandExecutor {
                     } else {
                         player.sendMessage(Utils.Color("&cThere are no NPCs to remove."));
                     }
+                    return;
+                }
+
+                if(args[0].equalsIgnoreCase("setlobby")) {
+                    if (!player.hasPermission("pirates.admin")) {
+                        player.sendMessage(Utils.Color(messages.getString("NoPermissions")));
+                        return;
+                    }
+
+                    this.plugin.setSpawnLocation(player.getLocation());
+                    player.sendMessage(Utils.Color("&aMain lobby setted correctly!"));
                     return;
                 }
 
@@ -201,6 +218,37 @@ public class PiratesCmd implements CommandExecutor {
                     }
 
                     player.sendMessage(Utils.Color(messages.getString("PlayerIsNotOnline")));
+                    return;
+                }
+
+                if (args[0].equalsIgnoreCase("join")) {
+                    PlayerData playerData = this.plugin.getPlayerManager().getPlayerData(player);
+                    if(playerData != null) {
+                        if(playerData.getState() == PlayerState.LOBBY) {
+                            Arena game = this.plugin.getArenaManager().getArena(args[1]);
+
+                            if(game == null) {
+                                player.sendMessage(Utils.Color(messages.getString("ArenaNoExists").replace("%arena%", args[0])));
+                                return;
+                            }
+
+                            if(game.getState() == ArenaState.PLAYING || game.getState() == ArenaState.ENDING) {
+                                player.sendMessage(Utils.Color(messages.getString("ArenaInGame").replace("%arena%", game.getName())));
+                                return;
+                            }
+
+                            if(game.isFull()) {
+                                player.sendMessage(Utils.Color(messages.getString("ArenaFull")));
+                                return;
+                            }
+
+                            game.addPlayer(player);
+                            return;
+                        } else {
+                            player.sendMessage(Utils.Color(messages.getString("AlreadyInGame")));
+                        }
+                        return;
+                    }
                     return;
                 }
 
@@ -414,9 +462,12 @@ public class PiratesCmd implements CommandExecutor {
     }
     
     public void sendHelp(Player player) {
+        player.sendMessage(Utils.Color("&7"));
         player.sendMessage(Utils.Color("&6/leave &8- &7Use this command to enter a game."));
+        player.sendMessage(Utils.Color("&6/games &8- &7Use this command to open the arena menu."));
         player.sendMessage(Utils.Color("&6/join [Arena name] &8- &7Use this command to enter a game."));
         player.sendMessage(Utils.Color("&6/stats [Player] &8- &7Use this command to see your stats or that of other players."));
+        player.sendMessage(Utils.Color("&7"));
 
         if (player.hasPermission("pirates.admin")) {
             player.sendMessage(Utils.Color("&eAdmin commands: "));
@@ -436,6 +487,7 @@ public class PiratesCmd implements CommandExecutor {
             player.sendMessage(Utils.Color("&6/pirates set spawn <Arena> <blue/red> &8- &7Use this command to set the spawn point of the players."));
             player.sendMessage(Utils.Color("&6/pirates addshop &8- &7Use this command to add a store in a game."));
             player.sendMessage(Utils.Color("&6/pirates delshop &8- &7Use this command to remove the last store added."));
+            player.sendMessage(Utils.Color("&6/pirates reload &8- &7Use this command to reload the plugin."));
             player.sendMessage(Utils.Color("&7"));
             player.sendMessage(Utils.Color("&e&lPlugin by GabrielHD"));
             player.sendMessage(Utils.Color("&7"));

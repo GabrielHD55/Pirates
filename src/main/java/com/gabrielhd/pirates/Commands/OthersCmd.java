@@ -24,8 +24,8 @@ public class OthersCmd implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String ss, String[] args) {
-        YamlConfig settings = new YamlConfig(this.plugin, "Settings");
-        YamlConfig messages = new YamlConfig(this.plugin, "Messages");
+        YamlConfig settings = this.plugin.getConfigManager().getSettings();
+        YamlConfig messages = this.plugin.getConfigManager().getMessages();
 
         if(sender instanceof Player) {
             Player player = (Player) sender;
@@ -44,10 +44,7 @@ public class OthersCmd implements CommandExecutor {
                     }
                     return true;
                 }
-                return true;
-            }
 
-            if (args.length == 1) {
                 if (cmd.getName().equalsIgnoreCase("stats")) {
                     PlayerData playerData = this.plugin.getPlayerManager().getPlayerData(player);
                     if (playerData != null) {
@@ -66,12 +63,17 @@ public class OthersCmd implements CommandExecutor {
                     return true;
                 }
 
+                if(cmd.getName().equalsIgnoreCase("games")) {
+                    new GamesMenu(this.plugin).openInventory(player);
+                    return true;
+                }
+
                 if (cmd.getName().equalsIgnoreCase("join")) {
                     PlayerData playerData = this.plugin.getPlayerManager().getPlayerData(player);
                     if(playerData != null) {
                         if(playerData.getState() == PlayerState.LOBBY) {
                             if(args.length == 1) {
-                                Arena game = this.plugin.getArenaManager().getArena(args[0]);
+                                Arena game = this.plugin.getArenaManager().getArena(args[1]);
 
                                 if(game == null) {
                                     player.sendMessage(Utils.Color(messages.getString("ArenaNoExists").replace("%arena%", args[0])));
@@ -104,7 +106,7 @@ public class OthersCmd implements CommandExecutor {
                 return true;
             }
 
-            if (args.length == 2) {
+            if (args.length == 1) {
                 if (cmd.getName().equalsIgnoreCase("stats")) {
                     String name = args[0];
                     Player target = Bukkit.getPlayer(name);

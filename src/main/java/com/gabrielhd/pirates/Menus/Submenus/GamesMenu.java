@@ -43,9 +43,10 @@ public class GamesMenu extends Menu {
     private final Pirates plugin;
 
     public GamesMenu(Pirates plugin) {
-        super(plugin, new YamlConfig(plugin, "Settings").getString("Menus.Games.Title"), 6);
+        super(plugin, new YamlConfig(plugin, "Settings").getString("Menu.Games.Title"), 6);
 
         this.plugin = plugin;
+
         this.updateMenu();
     }
 
@@ -79,7 +80,7 @@ public class GamesMenu extends Menu {
         YamlConfig messages = new YamlConfig(this.plugin, "Messages");
 
         ItemStack currentItem = event.getCurrentItem();
-        if(currentItem.getType() == Material.BARRIER || currentItem.getType() == Material.GRAY_STAINED_GLASS_PANE) {
+        if(currentItem.getType() == Material.BARRIER || currentItem.getType() == (Utils.is1_13_Latest() ? Material.GRAY_STAINED_GLASS_PANE : Material.getMaterial("STAINED_GLASS_PANE"))) {
             return;
         } else if (event.getSlot() == 49) {
             List<Arena> arenas = Arrays.stream(this.plugin.getArenaManager().getAllGames()).filter(game -> (game.getState() == ArenaState.WAITING || game.getState() == ArenaState.STARTING) && !game.isFull()).collect(Collectors.toList());
@@ -104,13 +105,13 @@ public class GamesMenu extends Menu {
     }
 
     public void updateMenu() {
-        YamlConfig messages = new YamlConfig(this.plugin, "Messages");
+        YamlConfig settings = new YamlConfig(this.plugin, "Settings");
 
         for(int i : GLASS_SLOTS) {
-            this.setItem(i, ItemUtils.createItem(Material.GRAY_STAINED_GLASS_PANE, 1, ""));
+            this.setItem(i, ItemUtils.createItem(Utils.is1_13_Latest() ? Material.GRAY_STAINED_GLASS_PANE : Material.getMaterial("STAINED_GLASS_PANE"), (short)14, 1, ""));
         }
 
-        this.setItem(49, ItemUtils.createItem(Material.COMPASS, 1, messages.getString("Menus.Games.RandomName")));
+        this.setItem(49, ItemUtils.createItem(Material.COMPASS, 1, settings.getString("Menu.Games.Random")));
 
         int slot = 10;
         for(Arena game : this.plugin.getArenaManager().getArenas().values()) {
@@ -121,7 +122,7 @@ public class GamesMenu extends Menu {
                 break;
             }
 
-            List<String> lore = messages.getStringList("Menus.Games.GameState");
+            List<String> lore = settings.getStringList("Menu.Games.GameState");
             this.getInventory().setItem(slot++, getItem(game, lore));
         }
 
@@ -130,12 +131,12 @@ public class GamesMenu extends Menu {
             if (item != null && item.getType() != Material.AIR) {
                 continue;
             }
-            this.setItem(i, ItemUtils.createItem(Material.BARRIER, 1, messages.getString("Menus.Games.Looking")));
+            this.setItem(i, ItemUtils.createItem(Material.BARRIER, 1, settings.getString("Menu.Games.Looking")));
         }
     }
 
     private ItemStack getItem(Arena game, List<String> lore) {
-        ItemStack item = new ItemStack(Material.FIREWORK_STAR);
+        ItemStack item = new ItemStack(Utils.is1_13_Latest() ? Material.FIRE_CHARGE : Material.getMaterial("FIREWORK_CHARGE"));
         if(item.getItemMeta() instanceof FireworkEffectMeta) {
             FireworkEffectMeta fm = (FireworkEffectMeta) item.getItemMeta();
             FireworkEffect.Builder fe = FireworkEffect.builder().flicker(false).trail(false);

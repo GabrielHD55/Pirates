@@ -3,13 +3,15 @@ version: ${project.version}
 api-version: 1.13
 main: ${project.groupId}.${project.artifactId}.${project.name}
 authors: [GabrielHD55, MikeLara]
+depend:
+  - Citizens
 softdepend:
   - MultiWorld
   - Multiverse-Core
   - PlaceholderAPI
 commands:
   pirates:
-    usage: /<command> help
+    usage: /<command>
     aliases:
       - pirate
   stats:
@@ -17,4 +19,6 @@ commands:
   join:
     usage: /<command>
   leave:
+    usage: /<command>
+  games:
     usage: /<command>

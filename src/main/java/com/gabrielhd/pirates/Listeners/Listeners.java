@@ -3,6 +3,8 @@ package com.gabrielhd.pirates.Listeners;
 import com.gabrielhd.pirates.Arena.Arena;
 import com.gabrielhd.pirates.Arena.ArenaState;
 import com.gabrielhd.pirates.Config.YamlConfig;
+import com.gabrielhd.pirates.NPCs.CustomNPC;
+import com.gabrielhd.pirates.NPCs.NPCType;
 import com.gabrielhd.pirates.Pirates;
 import com.gabrielhd.pirates.Player.OPPlayer;
 import com.gabrielhd.pirates.Player.PlayerData;
@@ -11,7 +13,9 @@ import com.gabrielhd.pirates.Teams.Team;
 import com.gabrielhd.pirates.Utils.Cuboid;
 import com.gabrielhd.pirates.Utils.Utils;
 import com.google.common.collect.Lists;
+import net.citizensnpcs.api.npc.NPC;
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -20,9 +24,7 @@ import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.Action;
-import org.bukkit.event.block.BlockBurnEvent;
-import org.bukkit.event.block.BlockExplodeEvent;
+import org.bukkit.event.block.*;
 import org.bukkit.event.entity.*;
 import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemStack;
@@ -166,16 +168,40 @@ public class Listeners implements Listener {
                         playerData.setDeaths(playerData.getDeaths() + 1);
 
                         arena.sendMessage(messages.getString("DeathPlayer").replace("%player%", player.getName()));
-                        if (playerData.getLives() <= 0) {
+                        int currentLives = playerData.getLives()-1;
+
+                        if (currentLives <= 0) {
                             arena.deathPlayer(player);
                         } else {
                             playerData.setLives(playerData.getLives() - 1);
-                            arena.loadPlayer(player);
+
+                            int time = settings.getInt("Settings.RespawnTime");
+
+                            if(time > 1) {
+                                player.setGameMode(GameMode.SPECTATOR);
+
+                                if(arena.getSpecs() != null) player.teleport(arena.getSpecs());
+
+                                Bukkit.getScheduler().runTaskLater(this.plugin, () -> arena.loadPlayer(player), time*20L);
+                            } else {
+                                arena.loadPlayer(player);
+                            }
                         }
                         event.setCancelled(true);
                     }
                 }
             }
+        }
+    }
+
+    @EventHandler
+    public void onFoodLevelChange(FoodLevelChangeEvent event) {
+        if(!(event.getEntity() instanceof Player)) return;
+
+        Player player = (Player) event.getEntity();
+        PlayerData playerData = this.plugin.getPlayerManager().getPlayerData(player);
+        if (playerData != null && playerData.getArena() != null && playerData.getState() != PlayerState.LOBBY) {
+            event.setCancelled(true);
         }
     }
     
@@ -189,19 +215,38 @@ public class Listeners implements Listener {
                 Arena arena = playerData.getArena();
                 Team team = arena.getPlayerTeam(player);
                 if (team != null) {
-                    for (Player members : team.getMembersList()) {
-                        if(projectile.getWorld().equals(arena.getSpawn().getWorld())) {
+                    for (Player members : team.getMembers()) {
+                        if (projectile.getWorld().equals(arena.getSpawn().getWorld())) {
                             if (projectile.getLocation().distance(members.getLocation()) < 5.0) {
                                 projectile.remove();
                                 return;
                             }
                         }
                     }
-                    for (Block block : Utils.getNearbyBlocks(projectile.getLocation(), 5)) {
+
+                    for(CustomNPC customNpc : this.plugin.getNpcManager().getNpcs()) {
+                        if(customNpc.getNpcType() == NPCType.SHOP) {
+                            NPC npc = customNpc.getNPC();
+
+                            Location npcMax = npc.getStoredLocation().clone().add(1.0, 1.0, 1.0);
+                            Location npcMin = npc.getStoredLocation().clone().subtract(1.0, 1.0, 1.0);
+                            Cuboid cuboid = new Cuboid(npcMax, npcMin);
+
+                            if(cuboid.isInRegion(projectile.getLocation())) {
+                                projectile.remove();
+                                return;
+                            }
+                        }
+                    }
+
+                    YamlConfig settings = new YamlConfig(this.plugin, "Settings");
+
+                    for (Block block : Utils.getNearbyBlocks(projectile.getLocation(), (int)settings.getDouble("Settings.DefaultExplosionRange", 4)+1)) {
                         playerData.getArena().getBlockTracker().add(block.getState());
                         block.getDrops().clear();
                     }
-                    player.getWorld().createExplosion(projectile.getLocation(), 4.0f, false);
+
+                    player.getWorld().createExplosion(projectile.getLocation(), (float) settings.getDouble("Settings.DefaultExplosionRange", 4), settings.getBoolean("Settings.ExplosionFire", false));
                     projectile.remove();
                 }
             }
@@ -288,6 +333,22 @@ public class Listeners implements Listener {
                         return;
                     }
                 }
+
+                for(CustomNPC customNpc : this.plugin.getNpcManager().getNpcs()) {
+                    if(customNpc.getNpcType() == NPCType.SHOP) {
+                        NPC npc = customNpc.getNPC();
+
+                        Location npcMax = npc.getStoredLocation().clone().add(1.0, 1.0, 1.0);
+                        Location npcMin = npc.getStoredLocation().clone().subtract(1.0, 1.0, 1.0);
+                        Cuboid cuboid = new Cuboid(npcMax, npcMin);
+
+                        if(cuboid.isInRegion(block.getLocation())) {
+                            event.blockList().clear();
+                            return;
+                        }
+                    }
+                }
+
                 if (arena.getCuboid() != null && arena.getCuboid().isInRegion(block.getLocation())) {
                     for (Block blocks : event.blockList()) {
                         if (blocks.getType() != Material.AIR) {
@@ -315,6 +376,21 @@ public class Listeners implements Listener {
                 }
             }
 
+            for(CustomNPC customNpc : this.plugin.getNpcManager().getNpcs()) {
+                if(customNpc.getNpcType() == NPCType.SHOP) {
+                    NPC npc = customNpc.getNPC();
+
+                    Location npcMax = npc.getStoredLocation().clone().add(1.0, 1.0, 1.0);
+                    Location npcMin = npc.getStoredLocation().clone().subtract(1.0, 1.0, 1.0);
+                    Cuboid cuboid = new Cuboid(npcMax, npcMin);
+
+                    if(cuboid.isInRegion(event.getLocation())) {
+                        event.blockList().clear();
+                        return;
+                    }
+                }
+            }
+
             if (arena.getCuboid() != null && arena.getCuboid().isInRegion(event.getLocation())) {
                 for (Block block : event.blockList()) {
                     if (block.getType() != Material.AIR) {
@@ -322,6 +398,26 @@ public class Listeners implements Listener {
                     }
                 }
             }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onBlockBreak(BlockBreakEvent event) {
+        Player player = event.getPlayer();
+
+        PlayerData playerData = this.plugin.getPlayerManager().getPlayerData(player);
+        if (playerData != null && playerData.getState() != PlayerState.LOBBY && playerData.getArena() != null) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onBlockPlace(BlockPlaceEvent event) {
+        Player player = event.getPlayer();
+
+        PlayerData playerData = this.plugin.getPlayerManager().getPlayerData(player);
+        if (playerData != null && playerData.getState() != PlayerState.LOBBY && playerData.getArena() != null) {
+            event.setCancelled(true);
         }
     }
 }

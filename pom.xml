@@ -7,7 +7,7 @@
     <name>Pirates</name>
     <groupId>com.gabrielhd</groupId>
     <artifactId>pirates</artifactId>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>1.0.37-SNAPSHOT</version>
     <description>Pirates minigame plugin</description>
 
     <properties>
@@ -17,16 +17,20 @@
 
     <repositories>
         <repository>
+            <id>everything</id>
+            <url>https://repo.citizensnpcs.co/</url>
+        </repository>
+        <repository>
+            <id>minecraft-repo</id>
+            <url>https://libraries.minecraft.net</url>
+        </repository>
+        <repository>
             <id>spigot-repo</id>
             <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
         </repository>
         <repository>
             <id>nms-repo</id>
             <url>https://repo.codemc.io/repository/nms/</url>
-        </repository>
-        <repository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/content/groups/public/</url>
         </repository>
         <repository>
             <id>placeholderapi</id>
@@ -40,12 +44,6 @@
             <artifactId>placeholderapi</artifactId>
             <version>2.11.1</version>
             <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>net.jitse</groupId>
-            <artifactId>npclib-api</artifactId>
-            <version>2.11.1-SNAPSHOT</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.zaxxer</groupId>
@@ -63,6 +61,13 @@
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
             <version>1.18.1-R0.1-SNAPSHOT</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.citizensnpcs</groupId>
+            <artifactId>citizens-main</artifactId>
+            <version>2.0.28-SNAPSHOT</version>
+            <type>jar</type>
             <scope>provided</scope>
         </dependency>
     </dependencies>
@@ -102,24 +107,12 @@
                 <configuration>
                     <relocations>
                         <relocation>
-                            <pattern>net.jitse</pattern>
-                            <shadedPattern>com.gabrielhd.libs</shadedPattern>
-                        </relocation>
-                        <relocation>
                             <pattern>com.zaxxer</pattern>
-                            <shadedPattern>com.gabrielhd.libs</shadedPattern>
-                        </relocation>
-                        <relocation>
-                            <pattern>com.comphenix</pattern>
                             <shadedPattern>com.gabrielhd.libs</shadedPattern>
                         </relocation>
                         <relocation>
                             <pattern>org.slf4j</pattern>
                             <shadedPattern>com.gabrielhd.libs.slf4j</shadedPattern>
-                        </relocation>
-                        <relocation>
-                            <pattern>org.bstats</pattern>
-                            <shadedPattern>com.gabrielhd.libs.bstats</shadedPattern>
                         </relocation>
                     </relocations>
                 </configuration>

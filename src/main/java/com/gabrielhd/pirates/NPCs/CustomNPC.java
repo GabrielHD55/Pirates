@@ -1,6 +1,6 @@
 package com.gabrielhd.pirates.NPCs;
 
-import net.jitse.npclib.api.NPC;
+import net.citizensnpcs.api.npc.NPC;
 
 public class CustomNPC {
 

@@ -9,44 +9,37 @@ import com.gabrielhd.pirates.Utils.LocUtils;
 import com.gabrielhd.pirates.Utils.Utils;
 import com.google.common.collect.Lists;
 import lombok.Getter;
-import net.jitse.npclib.NPCLib;
-import net.jitse.npclib.api.NPC;
-import net.jitse.npclib.api.events.NPCInteractEvent;
-import net.jitse.npclib.api.skin.Skin;
-import net.jitse.npclib.api.state.NPCSlot;
+import net.citizensnpcs.api.CitizensAPI;
+import net.citizensnpcs.api.event.NPCLeftClickEvent;
+import net.citizensnpcs.api.event.NPCRightClickEvent;
+import net.citizensnpcs.api.event.SpawnReason;
+import net.citizensnpcs.api.npc.NPC;
+import net.citizensnpcs.api.trait.trait.Equipment;
+import net.citizensnpcs.trait.SkinTrait;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.List;
 
 public class NPCManager implements Listener {
 
-	private final NPCLib library;
 	private final Pirates plugin;
-
-	private Skin shopSkin, gameSkin;
 
 	@Getter private final YamlConfig config;
 	@Getter private final List<CustomNPC> npcs;
 
     public NPCManager(Pirates plugin) {
     	this.plugin = plugin;
-
-    	this.config = new YamlConfig(plugin,"NPCs");
-		NPCLib library;
-        try {
-        	library = new NPCLib(plugin);
-		} catch (Exception e) {
-        	library = null;
-		}
-        this.library = library;
 		this.npcs = Lists.newArrayList();
+    	this.config = new YamlConfig(plugin,"NPCs");
 
         Bukkit.getPluginManager().registerEvents(this, plugin);
 
@@ -56,14 +49,6 @@ public class NPCManager implements Listener {
     public void setup() {
         this.npcs.clear();
 
-        String gameValue = config.getString("NPCs.Arenas.Skin.Value", "ewogICJ0aW1lc3RhbXAiIDogMTYxOTM4OTc1NjY5MSwKICAicHJvZmlsZUlkIiA6ICJkODAwZDI4MDlmNTE0ZjkxODk4YTU4MWYzODE0Yzc5OSIsCiAgInByb2ZpbGVOYW1lIiA6ICJ0aGVCTFJ4eCIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS9hODQzNTdmZGFkNjc5YTRmNWUwOGRkNGM0M2QwYWFiZmMzOWM2NWI5ZTlkY2U0ZDU1NjM0NTE2N2UzNmIyN2QyIgogICAgfQogIH0KfQ==");
-        String gameSignature = config.getString("NPCs.Arenas.Skin.Signature", "JjPHWP0QLVdV5GWCdWBB4g956S6fmNmtVeZdIzxI/rAJlcmGojoeBnKywk9/YDzqjLWItBUQ6TncV0xhVJnckRdoxMu2ybAklHXl/62XA4doOqBLyMf2RItXEItwb3rpA19e+MXmmZxMmpP9H8V8A6Kxk0ldP2+28QWlNfXzfogpClJAOmyUmra8DkZP6xZS5jvqgAX/Ykb+l/H67rcsMwhwlYRqAbmGFc1Pew3wuxBOXw9YsDZUbv+9VmJAGiMKKkACeQNpMYvgfv5fSEUUicAe7DBpDsP7O0MypeaxII5qOJ8uL3Q8yW8BJmDjPgT+I3dUwodrMMxsybj+fvJJ2aQJ1i3KvagK8DuTsK0wJGfhAR6GECFd474Nbs4Bcp2QSdWBdv3hlOlw6DzNxFCghML2zzp3F31SGTvx2A4gbR9wqgoRGYDh1+gN+8qlrvKET0DOMl16xh/Tfur6tkFHxdVbjdxJmaLmwrzu1i8hGG9dKYAJ4wEGHhruJkXPSbX3nzT0FRC1Elm1fCSJv7Uo9EM4DMw/TvVdJ4UiNlPemsonaTF+HoEydhhpUkcnuE1+Qk15cypolWwKVFaFQMSJGygpBHTN6P69QXoaWnWAQ/ClWzEQmbAWk8ZtLj4uMHGjgENsQmypBgSfpC5hdAffvo2xirfasZsQae7lt56OoTE=");
-        this.gameSkin = new Skin(gameValue, gameSignature);
-
-		String shopValue = config.getString("NPCs.Shop.Skin.Value", "ewogICJ0aW1lc3RhbXAiIDogMTYxOTM4OTc1NjY5MSwKICAicHJvZmlsZUlkIiA6ICJkODAwZDI4MDlmNTE0ZjkxODk4YTU4MWYzODE0Yzc5OSIsCiAgInByb2ZpbGVOYW1lIiA6ICJ0aGVCTFJ4eCIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS9hODQzNTdmZGFkNjc5YTRmNWUwOGRkNGM0M2QwYWFiZmMzOWM2NWI5ZTlkY2U0ZDU1NjM0NTE2N2UzNmIyN2QyIgogICAgfQogIH0KfQ==");
-		String shopSignature = config.getString("NPCs.Shop.Skin.Signature", "JjPHWP0QLVdV5GWCdWBB4g956S6fmNmtVeZdIzxI/rAJlcmGojoeBnKywk9/YDzqjLWItBUQ6TncV0xhVJnckRdoxMu2ybAklHXl/62XA4doOqBLyMf2RItXEItwb3rpA19e+MXmmZxMmpP9H8V8A6Kxk0ldP2+28QWlNfXzfogpClJAOmyUmra8DkZP6xZS5jvqgAX/Ykb+l/H67rcsMwhwlYRqAbmGFc1Pew3wuxBOXw9YsDZUbv+9VmJAGiMKKkACeQNpMYvgfv5fSEUUicAe7DBpDsP7O0MypeaxII5qOJ8uL3Q8yW8BJmDjPgT+I3dUwodrMMxsybj+fvJJ2aQJ1i3KvagK8DuTsK0wJGfhAR6GECFd474Nbs4Bcp2QSdWBdv3hlOlw6DzNxFCghML2zzp3F31SGTvx2A4gbR9wqgoRGYDh1+gN+8qlrvKET0DOMl16xh/Tfur6tkFHxdVbjdxJmaLmwrzu1i8hGG9dKYAJ4wEGHhruJkXPSbX3nzT0FRC1Elm1fCSJv7Uo9EM4DMw/TvVdJ4UiNlPemsonaTF+HoEydhhpUkcnuE1+Qk15cypolWwKVFaFQMSJGygpBHTN6P69QXoaWnWAQ/ClWzEQmbAWk8ZtLj4uMHGjgENsQmypBgSfpC5hdAffvo2xirfasZsQae7lt56OoTE=");
-        this.shopSkin = new Skin(shopValue, shopSignature);
-
         Bukkit.getScheduler().runTask(plugin, () -> {
         	if(!config.getString("NPCs.Arenas.Loc", "none").equalsIgnoreCase("none")) {
         		Location loc = LocUtils.StringToLocation(config.getString("NPCs.Arenas.Loc"));
@@ -71,14 +56,14 @@ public class NPCManager implements Listener {
         		loc.setZ(loc.getBlockZ() + 0.5);
 
         		NPCType npcType = NPCType.ARENAS;
-        		NPC npc = addNPC("arenas", config.getStringList("NPCs.Arenas.Name"), loc, npcType).getNPC();
 
-        		Bukkit.getOnlinePlayers().forEach(npc::show);
+        		addNPC("arenas", config.getString("NPCs.Arenas.Name"), loc, npcType, config.getString("NPCs.Arenas.Skin"));
         	}
 
         	if(config.isSet("NPCs.Shop.Locs") && !config.getStringList("NPCs.Shop.Locs").isEmpty()) {
 				NPCType npcType = NPCType.SHOP;
-				List<String> name = config.getStringList("NPCs.Shop.Name");
+				String name = config.getString("NPCs.Shop.Name");
+				String skin = config.getString("NPCs.Shop.Skin");
 
         		for(String locs : config.getStringList("NPCs.Shop.Locs")) {
         			if(locs == null || locs.isEmpty()) continue;
@@ -89,41 +74,49 @@ public class NPCManager implements Listener {
 					loc.setX(loc.getBlockX() + 0.5);
 					loc.setZ(loc.getBlockZ() + 0.5);
 
-					NPC npc = addNPC("shop-"+npcs.size(), name, loc, npcType).getNPC();
-
-					Bukkit.getOnlinePlayers().forEach(npc::show);
+					addNPC("shop-"+npcs.size(), name, loc, npcType, skin);
 				}
 			}
 
-            this.plugin.getLogger().info("&eLoaded &f" + npcs.size() + "&e NPC(s)");
+            this.plugin.getLogger().info("Loaded " + npcs.size() + " NPC(s)");
         });
     }
     
-    public CustomNPC addNPC(String key, List<String> lines, Location loc, NPCType npcType) {
-    	Skin skin;
+    public CustomNPC addNPC(String key, String name, Location loc, NPCType npcType, String skinName) {
 		ItemStack hand;
 
     	if(npcType == NPCType.SHOP) {
-			skin = shopSkin;
 			hand = new ItemStack(Material.BOOK);
 		} else {
-			skin = gameSkin;
 			hand = new ItemStack(Material.BOW);
 		}
 
-		for (int i = 0; i < lines.size(); i++) {
-			lines.set(i, Utils.Color(lines.get(i)));
-		}
+		NPC npc = CitizensAPI.getNPCRegistry().createNPC(EntityType.PLAYER, Utils.Color(name));
 
-		NPC npc = library.createNPC(lines);
-		npc.setLocation(loc);
-		npc.setSkin(skin);
-		npc.setItem(NPCSlot.MAINHAND, hand);
+		npc.spawn(loc, SpawnReason.CREATE);
+		npc.getOrAddTrait(SkinTrait.class).setSkinName(skinName);
+		npc.getOrAddTrait(Equipment.class).set(Equipment.EquipmentSlot.HAND, hand);
 
-    	CustomNPC customNPC = new CustomNPC(key, npc.create(), npcType);
+    	CustomNPC customNPC = new CustomNPC(key, npc, npcType);
 		npcs.add(customNPC);
     	return customNPC;
     }
+
+    public void saveNPCs() {
+    	CustomNPC gamesNPC = getNPC(NPCType.ARENAS);
+
+    	config.set("NPCs.Arenas.Loc", LocUtils.LocationToString(gamesNPC.getNPC().getStoredLocation()));
+
+    	List<String> npcLocs = Lists.newArrayList();
+    	for(CustomNPC customNPC : npcs) {
+    		if(customNPC.getNpcType() == NPCType.SHOP) {
+    			npcLocs.add(LocUtils.LocationToString(customNPC.getNPC().getStoredLocation()));
+			}
+		}
+
+    	config.set("NPCs.Arenas.Locs", npcLocs);
+    	config.save();
+	}
     
     public boolean removeNPC(CustomNPC npc) {
 		if (npc == null) {
@@ -134,15 +127,16 @@ public class NPCManager implements Listener {
     	npcs.remove(npc);
     	return true;
     }
-    
+
     public CustomNPC getNPC(String key) {
-        for (CustomNPC npc : npcs) {
-        	if (npc.getNPC().getId().equals(key) || npc.getKey().equalsIgnoreCase(key)) {
-        		return npc;
+    	for(CustomNPC npc : npcs) {
+    		if(npc.getKey().equalsIgnoreCase(key)) {
+    			return npc;
 			}
-        }
-        return null;
-    }
+		}
+
+    	return null;
+	}
 
 	public CustomNPC getNPC(NPCType type) {
 		for (CustomNPC npc : npcs) {
@@ -152,32 +146,52 @@ public class NPCManager implements Listener {
 		}
 		return null;
 	}
+
+	public CustomNPC getNPC(NPC npc) {
+    	for(CustomNPC npc2 : npcs) {
+    		if(npc == npc2.getNPC()) {
+    			return npc2;
+			}
+		}
+    	return null;
+	}
     
     public void destroy() {
     	npcs.forEach(npc -> npc.getNPC().destroy());
+
     	npcs.clear();
     }
-    
+
     @EventHandler
-    public void onJoin(final PlayerJoinEvent e) {
-    	Player player = e.getPlayer();
-    	Bukkit.getScheduler().runTask(this.plugin, () -> {
-    		if (player.isOnline()) {
-    		    npcs.forEach(customNPC -> customNPC.getNPC().show(player));
-            }
-    	});
-    }
-    
-    @EventHandler
-    public void onInteract(NPCInteractEvent e) {
-    	CustomNPC npc = getNPC(e.getNPC().getId());
+    public void onRightClick(NPCRightClickEvent e) {
+    	CustomNPC npc = getNPC(e.getNPC());
     	if (npc == null) {
     		return;
 		}
     	
-    	Player player = e.getWhoClicked();
+    	Player player = e.getClicker();
     	if(npc.getNpcType() == NPCType.ARENAS) {
 			new GamesMenu(this.plugin).openInventory(player);
 		}
     }
+
+    @EventHandler
+	public void onLeftClick(NPCLeftClickEvent e) {
+		CustomNPC npc = getNPC(e.getNPC());
+		if (npc == null) {
+			return;
+		}
+
+		Player player = e.getClicker();
+		if(npc.getNpcType() == NPCType.ARENAS) {
+			new GamesMenu(this.plugin).openInventory(player);
+		}
+	}
+
+	@EventHandler(priority = EventPriority.MONITOR)
+	public void onDisable(PluginDisableEvent event) {
+    	if(event.getPlugin().getName().equalsIgnoreCase("Citizens")) {
+    		destroy();
+		}
+	}
 }

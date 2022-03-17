@@ -1,4 +1,6 @@
-#Types: MySQL, SQLite
+# Pirates configuration
+#
+# Types: MySQL, SQLite
 StorageType: SQLite
 MySQL:
   Host: 127.0.0.1
@@ -19,7 +21,9 @@ Settings:
   # In Seconds
   RespawnTime: 10
   Lives: 1
-  WaterDamage: 2.0
+  WaterDamage: 5.0
+  ExplosionFire: false
+  DefaultExplosionRange: 4.0
 
 Scoreboard:
   Title: "&ePirates"
@@ -48,7 +52,7 @@ Items:
       Name: "&cGames"
       Lore:
         - "&7Right click to open"
-      Slot: 4
+      Slot: 0
   PreGame:
     Leave:
       ID: RED_BED

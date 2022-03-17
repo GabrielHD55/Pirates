@@ -39,7 +39,7 @@ public class GameTask extends BukkitRunnable {
                 if (playerData != null) {
                     Material m = player.getLocation().getBlock().getType();
                     if (m.name().equalsIgnoreCase("STATIONARY_WATER") || m == Material.WATER) {
-                        double damage = settings.getDouble("Settings.WaterDamage", 2.0);
+                        double damage = settings.getDouble("Settings.WaterDamage", 5.0);
                         if(player.getHealth() - damage > 0.5) {
                             player.damage(damage);
                         } else {
