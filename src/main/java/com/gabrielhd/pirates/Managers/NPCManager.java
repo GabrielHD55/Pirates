@@ -5,14 +5,12 @@ import com.gabrielhd.pirates.Menus.Submenus.GamesMenu;
 import com.gabrielhd.pirates.NPCs.CustomNPC;
 import com.gabrielhd.pirates.NPCs.NPCType;
 import com.gabrielhd.pirates.Pirates;
-import com.gabrielhd.pirates.Utils.LocUtils;
 import com.gabrielhd.pirates.Utils.Utils;
 import com.google.common.collect.Lists;
 import lombok.Getter;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.event.NPCLeftClickEvent;
 import net.citizensnpcs.api.event.NPCRightClickEvent;
-import net.citizensnpcs.api.event.SpawnReason;
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.api.trait.trait.Equipment;
 import net.citizensnpcs.trait.SkinTrait;
@@ -50,39 +48,44 @@ public class NPCManager implements Listener {
         this.npcs.clear();
 
         Bukkit.getScheduler().runTask(plugin, () -> {
-        	if(!config.getString("NPCs.Arenas.Loc", "none").equalsIgnoreCase("none")) {
-        		Location loc = LocUtils.StringToLocation(config.getString("NPCs.Arenas.Loc"));
-        		loc.setX(loc.getBlockX() + 0.5);
-        		loc.setZ(loc.getBlockZ() + 0.5);
-
+        	if(config.getInt("NPCs.Arenas.ID", -1) != -1) {
         		NPCType npcType = NPCType.ARENAS;
 
-        		addNPC("arenas", config.getString("NPCs.Arenas.Name"), loc, npcType, config.getString("NPCs.Arenas.Skin"));
+        		addNPC(config.getInt("NPCs.Arenas.ID"), npcType);
         	}
 
-        	if(config.isSet("NPCs.Shop.Locs") && !config.getStringList("NPCs.Shop.Locs").isEmpty()) {
+        	if(config.isSet("NPCs.Shop.IDs") && !config.getIntegerList("NPCs.Shop.IDs").isEmpty()) {
 				NPCType npcType = NPCType.SHOP;
-				String name = config.getString("NPCs.Shop.Name");
-				String skin = config.getString("NPCs.Shop.Skin");
 
-        		for(String locs : config.getStringList("NPCs.Shop.Locs")) {
-        			if(locs == null || locs.isEmpty()) continue;
-
-        			Location loc = LocUtils.StringToLocation(locs);
-        			if(loc == null) continue;
-
-					loc.setX(loc.getBlockX() + 0.5);
-					loc.setZ(loc.getBlockZ() + 0.5);
-
-					addNPC("shop-"+npcs.size(), name, loc, npcType, skin);
+        		for(int ids : config.getIntegerList("NPCs.Shop.IDs")) {
+					addNPC(ids, npcType);
 				}
 			}
 
             this.plugin.getLogger().info("Loaded " + npcs.size() + " NPC(s)");
         });
     }
+
+    public void createNPC(Location loc, String name, NPCType npcType, String skinName) {
+		ItemStack hand;
+
+		if(npcType == NPCType.SHOP) {
+			hand = new ItemStack(Material.BOOK);
+		} else {
+			hand = new ItemStack(Material.BOW);
+		}
+
+		NPC npc = CitizensAPI.getNPCRegistry().createNPC(EntityType.PLAYER, Utils.Color(name));
+
+		npc.getOrAddTrait(SkinTrait.class).setSkinName(skinName, true);
+		npc.getOrAddTrait(Equipment.class).set(Equipment.EquipmentSlot.HAND, hand);
+		npc.spawn(loc);
+
+		CustomNPC customNPC = new CustomNPC(String.valueOf(npc.getId()), npc, npcType);
+		npcs.add(customNPC);
+	}
     
-    public CustomNPC addNPC(String key, String name, Location loc, NPCType npcType, String skinName) {
+    public void addNPC(int key, NPCType npcType) {
 		ItemStack hand;
 
     	if(npcType == NPCType.SHOP) {
@@ -91,30 +94,33 @@ public class NPCManager implements Listener {
 			hand = new ItemStack(Material.BOW);
 		}
 
-		NPC npc = CitizensAPI.getNPCRegistry().createNPC(EntityType.PLAYER, Utils.Color(name));
+		NPC npc = CitizensAPI.getNPCRegistry().getById(key);
 
-		npc.spawn(loc, SpawnReason.CREATE);
-		npc.getOrAddTrait(SkinTrait.class).setSkinName(skinName);
-		npc.getOrAddTrait(Equipment.class).set(Equipment.EquipmentSlot.HAND, hand);
+    	if(npc != null) {
+    		if(!npc.isSpawned()) return;
 
-    	CustomNPC customNPC = new CustomNPC(key, npc, npcType);
-		npcs.add(customNPC);
-    	return customNPC;
+			npc.getOrAddTrait(Equipment.class).set(Equipment.EquipmentSlot.HAND, hand);
+
+			CustomNPC customNPC = new CustomNPC(String.valueOf(key), npc, npcType);
+			npcs.add(customNPC);
+		}
     }
 
     public void saveNPCs() {
     	CustomNPC gamesNPC = getNPC(NPCType.ARENAS);
 
-    	config.set("NPCs.Arenas.Loc", LocUtils.LocationToString(gamesNPC.getNPC().getStoredLocation()));
+    	if(gamesNPC != null && gamesNPC.getNPC() != null && gamesNPC.getNPC().isSpawned()) {
+			config.set("NPCs.Arenas.ID", gamesNPC.getNPC().getId());
+		}
 
-    	List<String> npcLocs = Lists.newArrayList();
+    	List<Integer> npcLocs = Lists.newArrayList();
     	for(CustomNPC customNPC : npcs) {
-    		if(customNPC.getNpcType() == NPCType.SHOP) {
-    			npcLocs.add(LocUtils.LocationToString(customNPC.getNPC().getStoredLocation()));
+    		if(customNPC.getNpcType() == NPCType.SHOP && customNPC.getNPC() != null && customNPC.getNPC().isSpawned()) {
+    			npcLocs.add(customNPC.getNPC().getId());
 			}
 		}
 
-    	config.set("NPCs.Arenas.Locs", npcLocs);
+    	config.set("NPCs.Shop.IDs", npcLocs);
     	config.save();
 	}
     

@@ -1,62 +1,67 @@
 # Pirates configuration
 #
+# Database system, to store all the data (Supports UUID).
 # Types: MySQL, SQLite
 StorageType: SQLite
+# Only set if StorageType is MySQL.
 MySQL:
+  # Host.
   Host: 127.0.0.1
+  # Port (Default 3306).
   Port: 3306
   TableName: "Data_"
+  # Database name.
   Database: "Minigame"
+  # Login username.
   Username: "Minigame"
+  # Login password.
   Password: "Minigame123"
 
+# General Settings.
 Settings:
+  # Exp a player will gain from killing a player.
   ExpPerKill:
+    # Minimum exp.
     Min: 10
+    # Maximum experience.
     Max: 15
+  # Experience that a player will get, by winning a game.
   ExpPerWin:
     Min: 20
     Max: 25
+  # Experience multiplier required to level up.
   LevelExpMultiplier: 500
-  # In Seconds
+  # Time it will take for the player to respawn for each death.
+  # (Time in seconds).
+  # (To deactivate this option use -1).
+  # (This option will only work if Lives is equal to or greater than 1).
   RespawnTime: 10
+  # Number of lives a player will have in the game.
   Lives: 1
-  WaterDamage: 5.0
+  # Damage caused by water to the player.
+  WaterDamage: 10.0
+  # Option to toggle whether explosions will cause fire or not.
   ExplosionFire: false
-  DefaultExplosionRange: 4.0
-
-Scoreboard:
-  Title: "&ePirates"
-  Game:
-    - "game line"
-  PreGame:
-    - "pregame line"
-  Lobby:
-    - "lobby line"
+  # Blast range
+  DefaultBlastRange: 4.0
 
 Menu:
+  # Games menu which you can access by interacting with the games NPC or using the /games command.
   Games:
+    # Menu title
     Title: "&cGames"
-    Looking: "&f&lLooking for game"
-    Random: "&aRandom game"
+    # Configuration for the "Looking" item
+    Looking:
+      ID: "BARRIER"
+      Data: 0
+      Name: "&f&lLooking for game"
+    # Configuration for the "Random" item
+    Random:
+      ID: "COMPASS"
+      Data: 0
+      Name: "&aRandom game"
     GameState:
       - "&7&m------------------------"
       - "&7● &fPlayers&7: &e%players%&7/&e%max%"
       - "&7● &fState&7: &e%state%"
       - "&7&m------------------------"
-
-Items:
-  Lobby:
-    Games:
-      ID: COMPASS
-      Name: "&cGames"
-      Lore:
-        - "&7Right click to open"
-      Slot: 0
-  PreGame:
-    Leave:
-      ID: RED_BED
-      Name: "&c&lLeave"
-      Lore:
-        - "&7Right click to leave"
-      Slot: 8

@@ -125,7 +125,7 @@ public class PiratesCmd implements CommandExecutor {
 
                     CustomNPC customNPC = this.plugin.getNpcManager().getNPC(NPCType.ARENAS);
                     if(customNPC == null) {
-                        npcManager.addNPC("arenas", npcManager.getConfig().getString("NPCs.Arenas.Name"), player.getLocation(), NPCType.ARENAS, npcManager.getConfig().getString("NPCs.Arenas.Skin"));
+                        npcManager.createNPC(player.getLocation(), npcManager.getConfig().getString("NPCs.Arenas.Name"), NPCType.ARENAS, npcManager.getConfig().getString("NPCs.Arenas.Skin"));
                     } else {
                         customNPC.getNPC().teleport(player.getLocation(), PlayerTeleportEvent.TeleportCause.COMMAND);
                     }
@@ -152,7 +152,7 @@ public class PiratesCmd implements CommandExecutor {
                         return;
                     }
 
-                    npcManager.addNPC("shop-"+npcManager.getNpcs().size(), npcManager.getConfig().getString("NPCs.Shop.Name"), player.getLocation(), NPCType.SHOP, npcManager.getConfig().getString("NPCs.Shop.Skin"));
+                    npcManager.createNPC(player.getLocation(), npcManager.getConfig().getString("NPCs.Shop.Name"), NPCType.SHOP, npcManager.getConfig().getString("NPCs.Shop.Skin"));
                     npcManager.saveNPCs();
                     player.sendMessage(Utils.Color("&aShop NPC added correctly!"));
                     return;

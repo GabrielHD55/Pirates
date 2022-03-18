@@ -44,6 +44,10 @@ public class Listeners implements Listener {
         Player player = event.getPlayer();
 
         this.plugin.getPlayerManager().createPlayer(player);
+
+        if(this.plugin.getSpawnLocation() != null) {
+            player.teleport(this.plugin.getSpawnLocation());
+        }
     }
     
     @EventHandler(priority = EventPriority.HIGHEST)
@@ -241,12 +245,12 @@ public class Listeners implements Listener {
 
                     YamlConfig settings = new YamlConfig(this.plugin, "Settings");
 
-                    for (Block block : Utils.getNearbyBlocks(projectile.getLocation(), (int)settings.getDouble("Settings.DefaultExplosionRange", 4)+1)) {
+                    for (Block block : Utils.getNearbyBlocks(projectile.getLocation(), (int)settings.getDouble("Settings.DefaultBlastRange", 4)+1)) {
                         playerData.getArena().getBlockTracker().add(block.getState());
                         block.getDrops().clear();
                     }
 
-                    player.getWorld().createExplosion(projectile.getLocation(), (float) settings.getDouble("Settings.DefaultExplosionRange", 4), settings.getBoolean("Settings.ExplosionFire", false));
+                    player.getWorld().createExplosion(projectile.getLocation(), (float) settings.getDouble("Settings.DefaultBlastRange", 4), settings.getBoolean("Settings.ExplosionFire", false));
                     projectile.remove();
                 }
             }

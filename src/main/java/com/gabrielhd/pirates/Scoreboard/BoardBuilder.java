@@ -5,6 +5,7 @@ import com.bizarrealex.aether.scoreboard.BoardAdapter;
 import com.bizarrealex.aether.scoreboard.cooldown.BoardCooldown;
 import com.gabrielhd.pirates.Arena.Arena;
 import com.gabrielhd.pirates.Arena.ArenaState;
+import com.gabrielhd.pirates.Config.YamlConfig;
 import com.gabrielhd.pirates.Pirates;
 import com.gabrielhd.pirates.Player.PlayerData;
 import com.gabrielhd.pirates.Player.PlayerState;
@@ -27,7 +28,7 @@ public class BoardBuilder implements BoardAdapter {
 
     @Override
     public String getTitle(Player p0) {
-        return Utils.Color(this.plugin.getConfigManager().getSettings().getString("Scoreboard.Title"));
+        return Utils.Color(new YamlConfig(this.plugin, "Scoreboard").getString("Scoreboard.Title"));
     }
 
     @Override
@@ -52,7 +53,7 @@ public class BoardBuilder implements BoardAdapter {
         List<String> lines = Lists.newArrayList();
         lines.clear();
 
-        for (String replaceText : this.plugin.getConfigManager().getSettings().getStringList("Scoreboard.Lobby")) {
+        for (String replaceText : new YamlConfig(this.plugin, "Scoreboard").getStringList("Scoreboard.Lobby")) {
             replaceText = replaceText.replaceAll("%player%", p.getName());
             replaceText = replaceText.replaceAll("%player-displayname%", p.getDisplayName());
 
@@ -77,7 +78,7 @@ public class BoardBuilder implements BoardAdapter {
         List<String> lines = Lists.newArrayList();
         lines.clear();
 
-        for (String replaceText : this.plugin.getConfigManager().getSettings().getStringList("Scoreboard.Game")) {
+        for (String replaceText : new YamlConfig(this.plugin, "Scoreboard").getStringList("Scoreboard.Game")) {
             replaceText = replaceText.replaceAll("%player%", p.getName());
             replaceText = replaceText.replaceAll("%player-displayname%", p.getDisplayName());
 
@@ -108,7 +109,7 @@ public class BoardBuilder implements BoardAdapter {
         List<String> lines = Lists.newArrayList();
         lines.clear();
 
-        for (String replaceText : this.plugin.getConfigManager().getSettings().getStringList("Scoreboard.Game")) {
+        for (String replaceText : new YamlConfig(this.plugin, "Scoreboard").getStringList("Scoreboard.Game")) {
             replaceText = replaceText.replaceAll("%player%", p.getName());
             replaceText = replaceText.replaceAll("%player-displayname%", p.getDisplayName());
 

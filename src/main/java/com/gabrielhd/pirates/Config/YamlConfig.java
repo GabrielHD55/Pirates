@@ -17,6 +17,8 @@ public class YamlConfig extends YamlConfiguration
         this.file = new File(plugin.getDataFolder(), this.path);
         this.saveDefault();
         this.reload();
+
+        this.options().parseComments(true);
     }
     
     public void reload() {

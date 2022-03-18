@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 public class GamesMenu extends Menu {
@@ -108,10 +109,15 @@ public class GamesMenu extends Menu {
         YamlConfig settings = new YamlConfig(this.plugin, "Settings");
 
         for(int i : GLASS_SLOTS) {
-            this.setItem(i, ItemUtils.createItem(Utils.is1_13_Latest() ? Material.GRAY_STAINED_GLASS_PANE : Material.getMaterial("STAINED_GLASS_PANE"), (short)14, 1, ""));
+            this.setItem(i, ItemUtils.createItem(Utils.is1_13_Latest() ? Material.GRAY_STAINED_GLASS_PANE : Material.getMaterial("STAINED_GLASS_PANE"), 1, "", (short)14));
         }
 
-        this.setItem(49, ItemUtils.createItem(Material.COMPASS, 1, settings.getString("Menu.Games.Random")));
+        Material random = Material.getMaterial(settings.getString("Menu.Games.Random.ID"));
+        if(random != null) {
+            this.setItem(49, ItemUtils.createItem(random, 1, settings.getString("Menu.Games.Random.Name"), settings.getInt("Menu.Games.Random.Data")));
+        } else {
+            this.plugin.getLogger().log(Level.SEVERE, "Random item ID is null");
+        }
 
         int slot = 10;
         for(Arena game : this.plugin.getArenaManager().getArenas().values()) {
@@ -131,7 +137,14 @@ public class GamesMenu extends Menu {
             if (item != null && item.getType() != Material.AIR) {
                 continue;
             }
-            this.setItem(i, ItemUtils.createItem(Material.BARRIER, 1, settings.getString("Menu.Games.Looking")));
+
+            Material looking = Material.getMaterial(settings.getString("Menu.Games.Looking.ID"));
+            if(looking == null) {
+                this.plugin.getLogger().log(Level.SEVERE, "Looking item ID is null");
+                return;
+            }
+
+            this.setItem(i, ItemUtils.createItem(looking, 1, settings.getString("Menu.Games.Looking.Name"), settings.getInt("Menu.Games.Looking.Data")));
         }
     }
 

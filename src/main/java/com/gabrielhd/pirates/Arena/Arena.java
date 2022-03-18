@@ -79,6 +79,7 @@ public class Arena {
     public void addPlayer(Player player) {
         YamlConfig settings = this.plugin.getConfigManager().getSettings();
         YamlConfig messages = this.plugin.getConfigManager().getMessages();
+        YamlConfig items = new YamlConfig(this.plugin, "Items");
 
         if (!this.enable) {
             player.sendMessage(Utils.Color(messages.getString("ArenaIsDisable").replace("%arena%", this.name)));
@@ -115,7 +116,9 @@ public class Arena {
         }
 
         try {
-            player.getInventory().setItem(settings.getInt("Items.PreGame.Leave.Slot", 8), ItemUtils.createItem(settings.getString("Items.PreGame.Leave.ID", "RED_BED"), settings.getString("Items.PreGame.Leave.Name", "&c&lLeave"), 1, settings.getStringList("Items.PreGame.Leave.Lore")));
+            if(items.isSet("Items.PreGame.Leave") && items.getBoolean("Items.PreGame.Leave.Enable", true)) {
+                player.getInventory().setItem(items.getInt("Items.PreGame.Leave.Slot", 8), ItemUtils.createItem(items.getString("Items.PreGame.Leave.ID", "RED_BED"), items.getString("Items.PreGame.Leave.Name", "&c&lLeave"), 1, items.getStringList("Items.PreGame.Leave.Lore"), items.getInt("Items.Pregame.Leave.Data")));
+            }
         } catch (NullPointerException ex) {
             ex.printStackTrace();
 
@@ -137,6 +140,7 @@ public class Arena {
     public void removePlayer(Player player, boolean disconnect) {
         YamlConfig settings = this.plugin.getConfigManager().getSettings();
         YamlConfig messages = this.plugin.getConfigManager().getMessages();
+        YamlConfig items = new YamlConfig(this.plugin, "Items");
 
         if (this.players.contains(player)) {
             if (!disconnect && player.isOnline()) {
@@ -172,7 +176,9 @@ public class Arena {
             }
 
             try {
-                player.getInventory().setItem(settings.getInt("Items.Lobby.Games.Slot", 0), ItemUtils.createItem(settings.getString("Items.Lobby.Games.ID", "COMPASS"), settings.getString("Items.Lobby.Games.Name", "&7Right click to open"), 1, settings.getStringList("Items.Lobby.Games.Lore")));
+                if(items.isSet("Items.Lobby.Games") && items.getBoolean("Items.Lobby.Games.Enable", true)) {
+                    player.getInventory().setItem(items.getInt("Items.Lobby.Games.Slot", 0), ItemUtils.createItem(items.getString("Items.Lobby.Games.ID", "COMPASS"), items.getString("Items.Lobby.Games.Name", "&7Right click to open"), 1, items.getStringList("Items.Lobby.Games.Lore"), items.getInt("Items.Lobby.Games.Data")));
+                }
             } catch (NullPointerException ex) {
                 ex.printStackTrace();
 
@@ -192,12 +198,21 @@ public class Arena {
     public void deathPlayer(Player player) {
         YamlConfig settings = this.plugin.getConfigManager().getSettings();
         YamlConfig messages = this.plugin.getConfigManager().getMessages();
+        YamlConfig items = new YamlConfig(this.plugin, "Items");
 
         if (this.players.contains(player)) {
             this.alivePlayers.remove(player);
 
             player.getInventory().clear();
-            player.getInventory().setItem(settings.getInt("Items.PreGame.Leave.Slot", 8), ItemUtils.createItem(settings.getString("Items.PreGame.Leave.ID", "RED_BED"), settings.getString("Items.PreGame.Leave.Name", "&c&lLeave"), 1, settings.getStringList("Items.PreGame.Leave.Lore")));
+            try {
+                if(items.isSet("Items.PreGame.Leave") && items.getBoolean("Items.PreGame.Leave.Enable", true)) {
+                    player.getInventory().setItem(items.getInt("Items.PreGame.Leave.Slot", 8), ItemUtils.createItem(items.getString("Items.PreGame.Leave.ID", "RED_BED"), items.getString("Items.PreGame.Leave.Name", "&c&lLeave"), 1, items.getStringList("Items.PreGame.Leave.Lore"), items.getInt("Items.Pregame.Leave.Data")));
+                }
+            } catch (NullPointerException ex) {
+                ex.printStackTrace();
+
+                this.plugin.getLogger().log(Level.SEVERE, "The configuration for the Leave item is wrong, please check your configuration or contact the developer!");
+            }
 
             this.sendMessage(messages.getString("Eliminated").replace("%player%", player.getName()));
 

@@ -1,13 +1,11 @@
 NPCs:
   Arenas:
     # Set npc name
-    Name:
-      - "&e&lGames"
+    Name: "&e&lGames"
     # Here you will place the name of the skin of the character you want
     Skin: ""
-    Loc: none
+    ID: -1
   Shop:
-    Name:
-      - "&e&lUpgrades"
+    Name: "&e&lUpgrades"
     Skin: ""
-    Locs: []
+    IDs: []

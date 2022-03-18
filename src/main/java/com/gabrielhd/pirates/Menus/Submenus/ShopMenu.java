@@ -8,6 +8,7 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 
 public class ShopMenu extends Menu {
+
     public ShopMenu(Pirates plugin, String name, int rows) {
         super(plugin, name, rows);
     }

@@ -1,0 +1,17 @@
+Items:
+  Lobby:
+    Games:
+      Enable: true
+      ID: COMPASS
+      Name: "&cGames"
+      Lore:
+        - "&7Right click to open"
+      Slot: 0
+  PreGame:
+    Leave:
+      Enable: true
+      ID: RED_BED
+      Name: "&c&lLeave"
+      Lore:
+        - "&7Right click to leave"
+      Slot: 8

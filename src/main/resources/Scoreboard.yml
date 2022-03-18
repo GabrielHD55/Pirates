@@ -1,0 +1,16 @@
+# Scoreboard Settings
+# Support PlaceholderAPI
+#
+# Any changes you make to this configuration file will be applied automatically without the need to reload the plugin.
+#
+Scoreboard:
+  Title: "&ePirates"
+  # In game lines
+  Game:
+    - "game line"
+  # Pregame lines
+  PreGame:
+    - "pregame line"
+  # Lobby lines
+  Lobby:
+    - "lobby line"
